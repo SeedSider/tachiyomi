@@ -20,10 +20,8 @@ import eu.kanade.tachiyomi.databinding.UpdatesControllerBinding
 import eu.kanade.tachiyomi.ui.base.controller.NoToolbarElevationController
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
 import eu.kanade.tachiyomi.ui.base.controller.RootController
-import eu.kanade.tachiyomi.ui.base.controller.applyBottomInsetPadding
 import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
 import eu.kanade.tachiyomi.ui.main.MainActivity
-import eu.kanade.tachiyomi.ui.main.offsetAppbarHeight
 import eu.kanade.tachiyomi.ui.manga.MangaController
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.util.system.notificationManager
@@ -75,9 +73,6 @@ class UpdatesController :
 
     override fun inflateView(inflater: LayoutInflater, container: ViewGroup): View {
         binding = UpdatesControllerBinding.inflate(inflater)
-
-        applyBottomInsetPadding(binding.recycler)
-
         return binding.root
     }
 
@@ -111,7 +106,7 @@ class UpdatesController :
             }
             .launchIn(scope)
 
-        binding.actionToolbar.offsetAppbarHeight(activity!!)
+        (activity!! as MainActivity).fixViewToBottom(binding.actionToolbar)
     }
 
     override fun onDestroyView(view: View) {

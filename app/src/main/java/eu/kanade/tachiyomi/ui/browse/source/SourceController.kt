@@ -27,7 +27,6 @@ import eu.kanade.tachiyomi.source.LocalSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
 import eu.kanade.tachiyomi.ui.base.controller.NucleusController
-import eu.kanade.tachiyomi.ui.base.controller.applyBottomInsetPadding
 import eu.kanade.tachiyomi.ui.base.controller.requestPermissionsSafe
 import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
 import eu.kanade.tachiyomi.ui.browse.BrowseController
@@ -82,9 +81,6 @@ class SourceController :
      */
     override fun inflateView(inflater: LayoutInflater, container: ViewGroup): View {
         binding = SourceMainControllerBinding.inflate(inflater)
-
-        applyBottomInsetPadding(binding.recycler)
-
         return binding.root
     }
 
@@ -198,7 +194,9 @@ class SourceController :
      * Opens a catalogue with the given controller.
      */
     private fun openSource(source: CatalogueSource, controller: BrowseSourceController) {
-        preferences.lastUsedSource().set(source.id)
+        if (!preferences.incognitoMode().get()) {
+            preferences.lastUsedSource().set(source.id)
+        }
         parentController!!.router.pushController(controller.withFadeTransaction())
     }
 

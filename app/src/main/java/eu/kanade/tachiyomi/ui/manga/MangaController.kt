@@ -53,7 +53,6 @@ import eu.kanade.tachiyomi.ui.library.ChangeMangaCategoriesDialog
 import eu.kanade.tachiyomi.ui.library.ChangeMangaCoverDialog
 import eu.kanade.tachiyomi.ui.library.LibraryController
 import eu.kanade.tachiyomi.ui.main.MainActivity
-import eu.kanade.tachiyomi.ui.main.offsetAppbarHeight
 import eu.kanade.tachiyomi.ui.manga.chapter.ChapterItem
 import eu.kanade.tachiyomi.ui.manga.chapter.ChaptersAdapter
 import eu.kanade.tachiyomi.ui.manga.chapter.ChaptersSettingsSheet
@@ -73,8 +72,6 @@ import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.getCoordinates
 import eu.kanade.tachiyomi.util.view.shrinkOnScroll
 import eu.kanade.tachiyomi.util.view.snack
-import kotlinx.android.synthetic.main.main_activity.root_coordinator
-import kotlinx.android.synthetic.main.main_activity.toolbar
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import reactivecircus.flowbinding.android.view.clicks
@@ -237,7 +234,7 @@ class MangaController :
             }
             .launchIn(scope)
 
-        binding.actionToolbar.offsetAppbarHeight(activity!!)
+        (activity!! as MainActivity).fixViewToBottom(binding.actionToolbar)
 
         settingsSheet = ChaptersSettingsSheet(router, presenter) { group ->
             if (group is ChaptersSettingsSheet.Filter.FilterGroup) {
@@ -261,7 +258,7 @@ class MangaController :
             else -> min(binding.recycler.computeVerticalScrollOffset(), 255)
         }
 
-        activity?.toolbar?.setTitleTextColor(
+        (activity as? MainActivity)?.binding?.toolbar?.setTitleTextColor(
             Color.argb(
                 calculatedAlpha,
                 toolbarTextColor.red,
@@ -505,7 +502,7 @@ class MangaController :
     private fun toggleFavorite() {
         val isNowFavorite = presenter.toggleFavorite()
         if (activity != null && !isNowFavorite && presenter.hasDownloads()) {
-            activity!!.root_coordinator?.snack(activity!!.getString(R.string.delete_downloads_for_manga)) {
+            (activity as? MainActivity)?.binding?.rootCoordinator?.snack(activity!!.getString(R.string.delete_downloads_for_manga)) {
                 setAction(R.string.action_delete) {
                     presenter.deleteDownloads()
                 }
@@ -906,7 +903,7 @@ class MangaController :
         val manga = presenter.manga
         presenter.downloadChapters(chapters)
         if (view != null && !manga.favorite) {
-            addSnackbar = activity!!.root_coordinator?.snack(view.context.getString(R.string.snack_add_to_library), Snackbar.LENGTH_INDEFINITE) {
+            addSnackbar = (activity as? MainActivity)?.binding?.rootCoordinator?.snack(view.context.getString(R.string.snack_add_to_library), Snackbar.LENGTH_INDEFINITE) {
                 setAction(R.string.action_add) {
                     addToLibrary(manga)
                 }
