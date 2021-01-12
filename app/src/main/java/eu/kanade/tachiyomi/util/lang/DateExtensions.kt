@@ -43,3 +43,24 @@ fun Long.toCalendar(): Calendar? {
     cal.timeInMillis = this
     return cal
 }
+
+fun dayFormat(substractor: Int): Date {
+    val cal = Calendar.getInstance()
+    cal.time = Date()
+    cal.add(Calendar.DATE, substractor)
+    cal[Calendar.HOUR_OF_DAY] = 0
+    cal[Calendar.MINUTE] = 0
+    cal[Calendar.SECOND] = 0
+    cal[Calendar.MILLISECOND] = 0
+    return cal.time
+}
+
+fun endFormat(): Date {
+    val cal = Calendar.getInstance()
+    cal.time = Date()
+    cal[Calendar.HOUR_OF_DAY] = 23
+    cal[Calendar.MINUTE] = 59
+    cal[Calendar.SECOND] = 59
+    cal[Calendar.MILLISECOND] = 59
+    return cal.time
+}

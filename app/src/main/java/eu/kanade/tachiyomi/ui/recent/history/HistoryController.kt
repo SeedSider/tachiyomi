@@ -1,30 +1,33 @@
 package eu.kanade.tachiyomi.ui.recent.history
 
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.View
-import android.view.ViewGroup
+import android.app.AlertDialog
+import android.app.Dialog
+import android.graphics.Color
+import android.os.Bundle
+import android.view.*
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.afollestad.materialdialogs.MaterialDialog
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.backup.BackupRestoreService
+import eu.kanade.tachiyomi.data.database.DatabaseHelper
 import eu.kanade.tachiyomi.data.database.models.History
 import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.databinding.HistoryControllerBinding
-import eu.kanade.tachiyomi.ui.base.controller.NoToolbarElevationController
-import eu.kanade.tachiyomi.ui.base.controller.NucleusController
-import eu.kanade.tachiyomi.ui.base.controller.RootController
-import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
+import eu.kanade.tachiyomi.ui.base.controller.*
 import eu.kanade.tachiyomi.ui.browse.source.browse.ProgressItem
 import eu.kanade.tachiyomi.ui.manga.MangaController
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
+import eu.kanade.tachiyomi.util.lang.dayFormat
+import eu.kanade.tachiyomi.util.lang.endFormat
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import reactivecircus.flowbinding.appcompat.queryTextChanges
+import uy.kohesive.injekt.injectLazy
+import java.util.*
 
 /**
  * Fragment that shows recently read manga.
@@ -42,6 +45,7 @@ class HistoryController :
     HistoryAdapter.OnItemClickListener,
     RemoveHistoryDialog.Listener {
 
+    private val db: DatabaseHelper by injectLazy()
     /**
      * Adapter containing the recent manga.
      */
@@ -195,5 +199,85 @@ class HistoryController :
         searchItem.fixExpand(
             onExpand = { invalidateMenuOnExpand() }
         )
+
+        val historyButton = menu.findItem(R.id.action_delete)
+        historyButton.actionView
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_delete -> showDeleteDialog()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun showDeleteDialog() {
+        val deleteDialog = AlertDialog.Builder(view?.context)
+        deleteDialog.setTitle("Delete History")
+        val items = arrayOf("Today", "2 Days", "3 Days", "All")
+        var checkedItem = 0
+        deleteDialog.setSingleChoiceItems(items, checkedItem) { _, which ->
+            when (which) {
+                0 -> checkedItem = 0
+                1 -> checkedItem = 1
+                2 -> checkedItem = 2
+                3 -> checkedItem = 3
+            }
+        }
+        deleteDialog.setPositiveButton(android.R.string.ok) { _, _ ->
+            deleteHistory(checkedItem)
+        }
+        deleteDialog.setNegativeButton(android.R.string.cancel) { _, _ ->
+        }
+        val delete = deleteDialog.create()
+        delete.setCanceledOnTouchOutside(false)
+        delete.show()
+        delete.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK)
+        delete.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK)
+    }
+
+    private fun deleteHistory(item: Int) {
+        val from: Date
+        val to = endFormat()
+        when (item) {
+            0 -> {
+                from = dayFormat(0)
+                clearHistory(from.time, to.time)
+            }
+            1 -> {
+                from = dayFormat(-1)
+                clearHistory(from.time, to.time)
+            }
+            2 -> {
+                from = dayFormat(-2)
+                clearHistory(from.time, to.time)
+            }
+            else -> {
+                val ctrl = ClearAllHistoryDialogController()
+                ctrl.targetController = this@HistoryController
+                ctrl.showDialog(router)
+            }
+        }
+    }
+
+    class ClearAllHistoryDialogController : DialogController() {
+        override fun onCreateDialog(savedViewState: Bundle?): Dialog {
+            return MaterialDialog(activity!!)
+                .message(R.string.clear_history_confirmation)
+                .positiveButton(android.R.string.ok) {
+                    (targetController as? HistoryController)?.clearAllHistory()
+                }
+                .negativeButton(android.R.string.cancel)
+        }
+    }
+
+    private fun clearAllHistory() {
+        db.deleteHistory().executeAsBlocking()
+        activity?.toast(R.string.clear_history_completed)
+    }
+
+    private fun clearHistory(from: Long, to: Long) {
+        db.deleteHistoryFunc(from, to).executeAsBlocking()
+        activity?.toast(R.string.clear_history_completed)
     }
 }

@@ -96,4 +96,13 @@ interface HistoryQueries : DbProvider {
                 .build()
         )
         .prepare()
+
+    fun deleteHistoryFunc(from: Long, to: Long) = db.delete()
+        .byQuery(
+            DeleteQuery.builder()
+                .table(HistoryTable.TABLE)
+                .where("${HistoryTable.COL_LAST_READ} BETWEEN $from AND $to")
+                .build()
+        )
+        .prepare()
 }
